@@ -1,0 +1,66 @@
+
+let nextState = function(currentState, weightMatrix) ->
+  hop11ActAll((netAll(currentState, weightMatrix)), currentState);;
+
+let rec updateN = function(currentState, weightMatrix, n) ->
+  if(n > 0) then
+    updateN(nextState(currentState,weightMatrix), weightMatrix, n-1)
+  else currentState;;
+
+let findsEquilibrium = function(initialState, weightMatrix, range) ->
+  if (initialState = updateN(initialState, weightMatrix, range)) then true
+  else false;;
+(**helper*)
+let rec energyUnit = function (state, weights, nState) ->
+  if state==[] && weights == [] then 0.0
+   else
+  ((hd state) *. (hd weights) *. (nState))
+       +. energyUnit((tl state), (tl weights), nState);;
+(**helper*)
+let rec energyAll = function (state, weightMatrix, curState) ->
+  if weightMatrix==[] then 0.0
+  else
+  energyUnit(state, (hd weightMatrix), hd curState) +.
+        energyAll(state, (tl weightMatrix), (tl curState));;
+
+let energy = function(state, weightMatrix) ->
+  if(weightMatrix == []) then 0.0
+  else -(0.5) *. (energyAll(state, weightMatrix, state));;
+
+(**helper*)
+let rec aStateList = function(astate, stateValue, valuePos, i) ->
+  if(astate == []) then []
+  else if(valuePos == i) then 0.0 :: aStateList(tl astate, stateValue, valuePos, i+1)
+  else (hd astate *. stateValue) :: aStateList(tl astate, stateValue, valuePos, i+1);;
+
+(**helper*)
+let rec aStateListList = function(astate, curState, valuePos) ->
+  if(astate == []) then []
+  else aStateList(curState, (hd astate), valuePos, 0) :: aStateListList(tl astate, curState, valuePos+1);;
+
+let hopTrainAstate = function(astate) ->
+  aStateListList(astate, astate, 0);;
+
+(**helper*)
+let rec combineWM = function(allStates) ->
+  if(allStates == []) then []
+  else hopTrainAstate(hd allStates) :: combineWM(tl allStates);;
+
+(**helper*)
+let rec addWeights = function(weight1, weight2) ->
+	if(weight1 ==[] && weight2 == []) then []
+	else hd weight1 +. hd weight2 :: addWeights(tl weight1, tl weight2);;
+
+(**helper*)
+let rec addWeightMX = function(weightMatrix1, weightMatrix2) ->
+	if(weightMatrix1 ==[] && weightMatrix2==[]) then []
+	else addWeights(hd weightMatrix1, hd weightMatrix2) :: addWeightMX(tl weightMatrix1, tl weightMatrix2);;
+
+(**helper*)
+let rec seperateWM = function (allWM) ->
+	if(allWM == []) then []
+	else if(tl allWM == []) then hd allWM
+	else seperateWM(addWeightMX(hd allWM, hd(tl allWM)) :: tl(tl allWM));;
+
+let hopTrain = function(allStates) ->
+  seperateWM(combineWM(allStates));;
